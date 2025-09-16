@@ -52,11 +52,20 @@ async function handleStartTranscription(settings: TranscriptionSettings) {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
     
     if (settings.audioSource === 'tab' && tab?.id) {
+      // Check if tabCapture API is available
+      if (!chrome.tabCapture || !chrome.tabCapture.capture) {
+        throw new Error('Tab capture API is not available. Make sure the extension has tabCapture permission.')
+      }
+      
       // Start tab capture - using callback version for Chrome API compatibility
       chrome.tabCapture.capture({
         audio: true,
         video: false
       }, (stream) => {
+        if (chrome.runtime.lastError) {
+          throw new Error(`Tab capture failed: ${chrome.runtime.lastError.message}`)
+        }
+        
         if (stream) {
           // Send stream info to side panel
           chrome.runtime.sendMessage({
@@ -64,7 +73,7 @@ async function handleStartTranscription(settings: TranscriptionSettings) {
             data: { stream }
           })
         } else {
-          throw new Error('Failed to capture tab audio')
+          throw new Error('Failed to capture tab audio - no stream returned')
         }
       })
     }

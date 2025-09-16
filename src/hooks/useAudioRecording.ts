@@ -44,12 +44,17 @@ export function useAudioRecording({
           data: { audioSource, language }
         })
         
+        setIsLoading(false)
+        
         return new Promise<void>((resolve, reject) => {
           const messageListener = (message: any) => {
             if (message.type === 'AUDIO_STREAM_READY') {
-              stream = message.data.stream
-              setupMediaRecorder(stream)
-              resolve()
+              if (message.data.stream) {
+                setupMediaRecorder(message.data.stream)
+                resolve()
+              } else {
+                reject(new Error('No stream received from background script'))
+              }
               chrome.runtime.onMessage.removeListener(messageListener)
             } else if (message.type === 'TRANSCRIPTION_ERROR') {
               reject(new Error(message.data.error))
@@ -57,6 +62,12 @@ export function useAudioRecording({
             }
           }
           chrome.runtime.onMessage.addListener(messageListener)
+          
+          // Timeout after 10 seconds
+          setTimeout(() => {
+            chrome.runtime.onMessage.removeListener(messageListener)
+            reject(new Error('Timeout waiting for tab capture'))
+          }, 10000)
         })
       }
 
