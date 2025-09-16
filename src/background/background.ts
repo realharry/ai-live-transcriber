@@ -29,6 +29,11 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     case 'START_TRANSCRIPTION':
       handleStartTranscription(message.data)
       break
+    case 'START_TAB_CAPTURE':
+      handleStartTabCapture().then(sendResponse).catch(error => {
+        sendResponse({ error: error.message })
+      })
+      return true // Keep message channel open for async response
     case 'STOP_TRANSCRIPTION':
       handleStopTranscription()
       break
@@ -41,6 +46,59 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
 })
 
+async function handleStartTabCapture() {
+  try {
+    console.log('Starting tab capture...')
+    
+    // Get current tab for tab capture
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+    
+    if (!tab?.id) {
+      throw new Error('No active tab found for audio capture. Please try using microphone instead.')
+    }
+    
+    // Check if we're on a restricted page
+    if (tab.url?.startsWith('chrome://') || tab.url?.startsWith('chrome-extension://')) {
+      throw new Error('Tab capture is not allowed on Chrome internal pages. Please navigate to a regular website or use microphone recording.')
+    }
+    
+    // Check if tabCapture API is available
+    if (!chrome.tabCapture || !chrome.tabCapture.capture) {
+      throw new Error('Tab capture API is not available. This might be due to browser restrictions. Please try using microphone recording instead.')
+    }
+    
+    // Return a promise that resolves when tab capture is successful
+    return new Promise((resolve, reject) => {
+      // Start tab capture - using callback version for Chrome API compatibility
+      chrome.tabCapture.capture({
+        audio: true,
+        video: false
+      }, (stream) => {
+        if (chrome.runtime.lastError) {
+          console.error('Tab capture error:', chrome.runtime.lastError)
+          reject(new Error(`Tab capture failed: ${chrome.runtime.lastError.message}. Try using microphone recording instead.`))
+          return
+        }
+        
+        if (stream) {
+          console.log('Tab capture successful')
+          // Send stream info to side panel
+          chrome.runtime.sendMessage({
+            type: 'AUDIO_STREAM_READY',
+            data: { stream }
+          })
+          resolve({ success: true })
+        } else {
+          reject(new Error('Failed to capture tab audio - no stream returned. Please try microphone recording instead.'))
+        }
+      })
+    })
+  } catch (error) {
+    console.error('Error in handleStartTabCapture:', error)
+    throw error
+  }
+}
+
 async function handleStartTranscription(settings: TranscriptionSettings) {
   try {
     console.log('Starting transcription with settings:', settings)
@@ -49,64 +107,17 @@ async function handleStartTranscription(settings: TranscriptionSettings) {
     await chrome.storage.local.set({ settings: { ...settings, isRecording: true } })
     
     if (settings.audioSource === 'tab') {
-      // Get current tab for tab capture
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
-      
-      if (!tab?.id) {
+      try {
+        await handleStartTabCapture()
+      } catch (error: any) {
+        // If tab capture fails, notify the side panel to fall back to microphone
         chrome.runtime.sendMessage({
           type: 'TRANSCRIPTION_ERROR',
-          data: { error: 'No active tab found for audio capture. Please try using microphone instead.' }
+          data: { error: error.message }
         })
-        return
       }
-      
-      // Check if we're on a restricted page
-      if (tab.url?.startsWith('chrome://') || tab.url?.startsWith('chrome-extension://')) {
-        chrome.runtime.sendMessage({
-          type: 'TRANSCRIPTION_ERROR',
-          data: { error: 'Tab capture is not allowed on Chrome internal pages. Please navigate to a regular website or use microphone recording.' }
-        })
-        return
-      }
-      
-      // Check if tabCapture API is available
-      if (!chrome.tabCapture || !chrome.tabCapture.capture) {
-        chrome.runtime.sendMessage({
-          type: 'TRANSCRIPTION_ERROR',
-          data: { error: 'Tab capture API is not available. This might be due to browser restrictions. Please try using microphone recording instead.' }
-        })
-        return
-      }
-      
-      // Start tab capture - using callback version for Chrome API compatibility
-      chrome.tabCapture.capture({
-        audio: true,
-        video: false
-      }, (stream) => {
-        if (chrome.runtime.lastError) {
-          console.error('Tab capture error:', chrome.runtime.lastError)
-          chrome.runtime.sendMessage({
-            type: 'TRANSCRIPTION_ERROR',
-            data: { error: `Tab capture failed: ${chrome.runtime.lastError.message}. Try using microphone recording instead.` }
-          })
-          return
-        }
-        
-        if (stream) {
-          // Send stream info to side panel
-          chrome.runtime.sendMessage({
-            type: 'AUDIO_STREAM_READY',
-            data: { stream }
-          })
-        } else {
-          chrome.runtime.sendMessage({
-            type: 'TRANSCRIPTION_ERROR',
-            data: { error: 'Failed to capture tab audio - no stream returned. Please try microphone recording instead.' }
-          })
-        }
-      })
     } else {
-      // For microphone, we just notify the side panel to start recording
+      // For microphone, we just notify the side panel to start recording directly
       chrome.runtime.sendMessage({
         type: 'START_MICROPHONE_RECORDING'
       })

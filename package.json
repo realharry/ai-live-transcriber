@@ -8,7 +8,7 @@
     "build": "tsc && vite build && npm run copy-manifest && npm run fix-paths",
     "preview": "vite preview",
     "copy-manifest": "cp public/manifest.json dist/manifest.json",
-    "fix-paths": "sed -i 's|href=\"/assets/|href=\"../../assets/|g' dist/src/*/index.html && sed -i 's|src=\"/assets/|src=\"../../assets/|g' dist/src/*/index.html",
+    "fix-paths": "find dist/src -name '*.html' -exec sed -i 's|href=\"/assets/|href=\"../../assets/|g' {} + && find dist/src -name '*.html' -exec sed -i 's|src=\"/assets/|src=\"../../assets/|g' {} + && find dist/src -name '*.html' -exec sed -i 's|href=\"./assets/|href=\"../../assets/|g' {} + && find dist/src -name '*.html' -exec sed -i 's|src=\"./assets/|src=\"../../assets/|g' {} +",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
   "keywords": [
@@ -21,8 +21,8 @@
   "license": "ISC",
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.13",
-    "@types/chrome": "^0.1.11",
-    "@types/node": "^24.5.0",
+    "@types/chrome": "^0.1.12",
+    "@types/node": "^24.5.1",
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",
     "@typescript-eslint/eslint-plugin": "^8.44.0",
