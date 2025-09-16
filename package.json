@@ -1,0 +1,45 @@
+{
+  "name": "ai-live-transcriber",
+  "version": "1.0.0",
+  "description": "A Chrome extension that listens to the audio sound, from the Browser or from the surroundings, and transcribes it into text using LLM models/services. The extension features a side panel UI for easy access to transcription settings, as well as additional functionalities like summarizing the transcribed text and downloading it as a file.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build && npm run copy-manifest",
+    "preview": "vite preview",
+    "copy-manifest": "cp public/manifest.json dist/manifest.json",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+  },
+  "keywords": [
+    "chrome-extension",
+    "transcription",
+    "ai",
+    "speech-to-text"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.13",
+    "@types/chrome": "^0.1.11",
+    "@types/node": "^24.5.0",
+    "@types/react": "^19.1.13",
+    "@types/react-dom": "^19.1.9",
+    "@typescript-eslint/eslint-plugin": "^8.44.0",
+    "@typescript-eslint/parser": "^8.44.0",
+    "@vitejs/plugin-react": "^5.0.2",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^9.35.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.13",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.5"
+  },
+  "dependencies": {
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.544.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "tailwind-merge": "^3.3.1"
+  }
+}
