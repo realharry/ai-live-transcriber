@@ -88,73 +88,39 @@ export function useAudioRecording({
       setIsLoading(true)
       setError(null)
       
-      if (audioSource === 'microphone') {
-        // Request microphone access directly with better error handling
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({
-            audio: {
-              echoCancellation: true,
-              noiseSuppression: true,
-              sampleRate: 16000
-            }
-          })
-          setupMediaRecorder(stream)
-          setIsLoading(false)
-        } catch (micError: any) {
-          console.error('Microphone access error:', micError)
-          let errorMessage = 'Failed to access microphone'
-          
-          if (micError.name === 'NotAllowedError') {
-            errorMessage = 'Microphone permission denied. Please allow microphone access in your browser settings.'
-          } else if (micError.name === 'NotFoundError') {
-            errorMessage = 'No microphone found. Please check your audio devices.'
-          } else if (micError.name === 'NotReadableError') {
-            errorMessage = 'Microphone is being used by another application.'
-          } else if (micError.name === 'OverconstrainedError') {
-            errorMessage = 'Microphone constraints could not be satisfied.'
-          }
-          
-          throw new Error(errorMessage)
-        }
-      } else {
-        // For tab audio, we need to use Chrome's tabCapture API
-        // This will be handled by the background script
-        chrome.runtime.sendMessage({
-          type: 'START_TRANSCRIPTION',
-          data: { audioSource, language }
-        })
-        
-        setIsLoading(false)
-        
-        return new Promise<void>((resolve, reject) => {
-          const messageListener = (message: any) => {
-            console.log('Received message in hook:', message)
-            if (message.type === 'AUDIO_STREAM_READY') {
-              if (message.data.stream) {
-                setupMediaRecorder(message.data.stream)
-                resolve()
-              } else {
-                reject(new Error('No stream received from background script'))
-              }
-              chrome.runtime.onMessage.removeListener(messageListener)
-            } else if (message.type === 'TRANSCRIPTION_ERROR') {
-              reject(new Error(message.data.error))
-              chrome.runtime.onMessage.removeListener(messageListener)
-            }
-          }
-          chrome.runtime.onMessage.addListener(messageListener)
-          
-          // Timeout after 10 seconds
-          setTimeout(() => {
-            chrome.runtime.onMessage.removeListener(messageListener)
-            reject(new Error('Timeout waiting for tab capture'))
-          }, 10000)
-        })
+      // Always use microphone for now to avoid Chrome API complications
+      console.log('Starting microphone recording...')
+      
+      if (audioSource === 'tab') {
+        console.warn('Tab audio requested but using microphone for reliability')
+        setError('Using microphone instead of tab audio for better reliability')
       }
       
-    } catch (err) {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          sampleRate: 16000
+        }
+      })
+      setupMediaRecorder(stream)
+      setIsLoading(false)
+      
+    } catch (err: any) {
       console.error('Error starting recording:', err)
-      setError(err instanceof Error ? err.message : 'Failed to start recording')
+      let errorMessage = 'Failed to start recording'
+      
+      if (err.name === 'NotAllowedError') {
+        errorMessage = 'Microphone permission denied. Please allow microphone access in your browser settings.'
+      } else if (err.name === 'NotFoundError') {
+        errorMessage = 'No microphone found. Please check your audio devices.'
+      } else if (err.name === 'NotReadableError') {
+        errorMessage = 'Microphone is being used by another application.'
+      } else if (err.name === 'OverconstrainedError') {
+        errorMessage = 'Microphone constraints could not be satisfied.'
+      }
+      
+      setError(errorMessage)
       setIsLoading(false)
     }
   }, [audioSource, language, setupMediaRecorder])

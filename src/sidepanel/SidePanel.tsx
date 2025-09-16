@@ -200,13 +200,27 @@ export function SidePanel() {
           <Button
             variant={settings.audioSource === 'tab' ? 'default' : 'outline'}
             size="sm"
-            onClick={() => handleAudioSourceChange('tab')}
-            className="flex-1"
+            onClick={() => {
+              handleAudioSourceChange('tab')
+              setDebugInfo('Tab Audio selected - will use microphone for reliability at ' + new Date().toLocaleTimeString())
+            }}
+            className="flex-1 relative"
+            title="Note: Currently uses microphone for better reliability"
           >
             <Monitor className="h-4 w-4 mr-2" />
-            Tab Audio
+            Tab Audio*
+            <span className="absolute -top-1 -right-1 bg-yellow-500 text-white text-xs rounded-full px-1">
+              β
+            </span>
           </Button>
         </div>
+        
+        {/* Tab Audio Notice */}
+        {settings.audioSource === 'tab' && (
+          <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
+            <strong>Note:</strong> Tab Audio currently uses microphone recording for better reliability and compatibility.
+          </div>
+        )}
       </div>
 
       {/* Recording Controls */}
