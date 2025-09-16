@@ -89,16 +89,33 @@ export function useAudioRecording({
       setError(null)
       
       if (audioSource === 'microphone') {
-        // Request microphone access directly
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            sampleRate: 16000
+        // Request microphone access directly with better error handling
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              sampleRate: 16000
+            }
+          })
+          setupMediaRecorder(stream)
+          setIsLoading(false)
+        } catch (micError: any) {
+          console.error('Microphone access error:', micError)
+          let errorMessage = 'Failed to access microphone'
+          
+          if (micError.name === 'NotAllowedError') {
+            errorMessage = 'Microphone permission denied. Please allow microphone access in your browser settings.'
+          } else if (micError.name === 'NotFoundError') {
+            errorMessage = 'No microphone found. Please check your audio devices.'
+          } else if (micError.name === 'NotReadableError') {
+            errorMessage = 'Microphone is being used by another application.'
+          } else if (micError.name === 'OverconstrainedError') {
+            errorMessage = 'Microphone constraints could not be satisfied.'
           }
-        })
-        setupMediaRecorder(stream)
-        setIsLoading(false)
+          
+          throw new Error(errorMessage)
+        }
       } else {
         // For tab audio, we need to use Chrome's tabCapture API
         // This will be handled by the background script

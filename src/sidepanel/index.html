@@ -4,6 +4,38 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI Live Transcriber</title>
+    <style>
+      /* Fallback CSS to ensure basic styling works */
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #ffffff;
+        color: #1e293b;
+      }
+      #root {
+        min-height: 100vh;
+        padding: 16px;
+        max-width: 400px;
+        margin: 0 auto;
+      }
+      /* Basic button styling as fallback */
+      button {
+        font-family: inherit;
+        cursor: pointer;
+        border-radius: 6px;
+        padding: 8px 16px;
+        font-weight: 500;
+        transition: all 0.2s;
+      }
+      /* Ensure content is visible even without external CSS */
+      .space-y-4 > * + * {
+        margin-top: 16px !important;
+      }
+      .space-y-2 > * + * {
+        margin-top: 8px !important;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>

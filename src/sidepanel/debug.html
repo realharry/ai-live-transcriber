@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - AI Live Transcriber</title>
+    <style>
+        /* Inline CSS to test if HTML loads at all */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f9ff;
+            color: #1e293b;
+        }
+        .debug-panel {
+            max-width: 400px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            padding: 10px 20px;
+            margin: 10px 5px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .btn-primary {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .btn-secondary {
+            background-color: #6b7280;
+            color: white;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success {
+            background-color: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+        .error {
+            background-color: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+        .log {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-panel">
+        <h1>🔍 Debug Panel</h1>
+        <div id="status" class="status">Loading...</div>
+        
+        <h3>Basic Tests:</h3>
+        <button id="testHtml" class="test-button btn-primary">Test HTML Loading</button>
+        <button id="testJs" class="test-button btn-secondary">Test JavaScript</button>
+        <button id="testMic" class="test-button btn-primary">Test Microphone</button>
+        <button id="testStorage" class="test-button btn-secondary">Test Storage</button>
+        
+        <h3>Console Log:</h3>
+        <div id="log" class="log"></div>
+        
+        <h3>Extension Info:</h3>
+        <div id="extensionInfo"></div>
+    </div>
+
+    <script>
+        // Simple logger to show in UI
+        const logDiv = document.getElementById('log');
+        const statusDiv = document.getElementById('status');
+        const extensionInfoDiv = document.getElementById('extensionInfo');
+        
+        function log(message) {
+            console.log(message);
+            logDiv.innerHTML += `${new Date().toLocaleTimeString()}: ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function updateStatus(message, isError = false) {
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${isError ? 'error' : 'success'}`;
+        }
+        
+        // Test 1: HTML Loading
+        document.getElementById('testHtml').addEventListener('click', () => {
+            log('✅ HTML loaded successfully');
+            log('✅ CSS applied (you can see styling)');
+            log('✅ JavaScript executing (this button works)');
+            updateStatus('HTML/CSS/JS all working!');
+        });
+        
+        // Test 2: JavaScript execution
+        document.getElementById('testJs').addEventListener('click', () => {
+            log('✅ JavaScript event listeners working');
+            log('✅ DOM manipulation working');
+            updateStatus('JavaScript fully functional!');
+        });
+        
+        // Test 3: Microphone permission
+        document.getElementById('testMic').addEventListener('click', async () => {
+            log('🎤 Testing microphone permission...');
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                log('✅ Microphone access granted!');
+                log(`✅ Audio stream: ${stream.id}`);
+                updateStatus('Microphone working!');
+                
+                // Stop the stream
+                stream.getTracks().forEach(track => track.stop());
+                log('✅ Stream stopped');
+            } catch (error) {
+                log(`❌ Microphone error: ${error.name} - ${error.message}`);
+                updateStatus(`Microphone failed: ${error.message}`, true);
+            }
+        });
+        
+        // Test 4: Chrome storage
+        document.getElementById('testStorage').addEventListener('click', async () => {
+            log('💾 Testing Chrome storage...');
+            try {
+                await chrome.storage.local.set({ test: 'debug-value' });
+                const data = await chrome.storage.local.get(['test']);
+                log(`✅ Storage working: ${JSON.stringify(data)}`);
+                updateStatus('Storage API working!');
+            } catch (error) {
+                log(`❌ Storage error: ${error.message}`);
+                updateStatus(`Storage failed: ${error.message}`, true);
+            }
+        });
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            log('🚀 Debug panel initialized');
+            updateStatus('Ready for testing');
+            
+            // Show extension info
+            if (typeof chrome !== 'undefined' && chrome.runtime) {
+                extensionInfoDiv.innerHTML = `
+                    <strong>Extension ID:</strong> ${chrome.runtime.id}<br>
+                    <strong>Chrome API:</strong> Available<br>
+                    <strong>Manifest:</strong> v${chrome.runtime.getManifest().manifest_version}
+                `;
+                log('✅ Chrome extension context detected');
+            } else {
+                extensionInfoDiv.innerHTML = '<strong>⚠️ Not in Chrome extension context</strong>';
+                log('⚠️ Chrome APIs not available');
+            }
+        });
+    </script>
+</body>
+</html>

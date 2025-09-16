@@ -27,6 +27,13 @@ export function SidePanel() {
   const [currentTranscription, setCurrentTranscription] = useState<string>('')
   const [summary, setSummary] = useState<string>('')
   const [isLoadingSummary, setIsLoadingSummary] = useState(false)
+  const [debugInfo, setDebugInfo] = useState<string>('')
+
+  // Add debug logging
+  useEffect(() => {
+    console.log('SidePanel component mounted')
+    setDebugInfo('Component initialized at ' + new Date().toLocaleTimeString())
+  }, [])
 
   const { 
     isRecording, 
@@ -82,22 +89,28 @@ export function SidePanel() {
   }
 
   const handleStartRecording = () => {
+    console.log('Start recording clicked')
     setCurrentTranscription('')
     setSummary('')
+    setDebugInfo(`Recording started at ${new Date().toLocaleTimeString()}`)
     startRecording()
   }
 
   const handleLanguageChange = (language: string) => {
+    console.log('Language changed to:', language)
     const newSettings = { ...settings, targetLanguage: language }
     saveSettings(newSettings)
     setSettings(newSettings)
+    setDebugInfo(`Language changed to ${language} at ${new Date().toLocaleTimeString()}`)
   }
 
   const handleAudioSourceChange = (audioSource: 'microphone' | 'tab') => {
+    console.log('Audio source changed to:', audioSource)
     const newSettings = { ...settings, audioSource }
     saveSettings(newSettings)
     // Force a re-render to show the change immediately
     setSettings(newSettings)
+    setDebugInfo(`Audio source changed to ${audioSource} at ${new Date().toLocaleTimeString()}`)
   }
 
   const handleDownload = () => {
@@ -287,6 +300,15 @@ export function SidePanel() {
             readOnly
             className="min-h-[80px] resize-none bg-gray-50"
           />
+        </div>
+      )}
+
+      {/* Debug Info */}
+      {debugInfo && (
+        <div className="pt-3 border-t">
+          <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
+            <strong>Debug:</strong> {debugInfo}
+          </div>
         </div>
       )}
 
