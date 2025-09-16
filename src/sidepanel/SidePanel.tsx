@@ -90,11 +90,14 @@ export function SidePanel() {
   const handleLanguageChange = (language: string) => {
     const newSettings = { ...settings, targetLanguage: language }
     saveSettings(newSettings)
+    setSettings(newSettings)
   }
 
   const handleAudioSourceChange = (audioSource: 'microphone' | 'tab') => {
     const newSettings = { ...settings, audioSource }
     saveSettings(newSettings)
+    // Force a re-render to show the change immediately
+    setSettings(newSettings)
   }
 
   const handleDownload = () => {

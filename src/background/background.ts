@@ -48,10 +48,14 @@ async function handleStartTranscription(settings: TranscriptionSettings) {
     // Update settings in storage
     await chrome.storage.local.set({ settings: { ...settings, isRecording: true } })
     
-    // Get current tab for tab capture
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
-    
-    if (settings.audioSource === 'tab' && tab?.id) {
+    if (settings.audioSource === 'tab') {
+      // Get current tab for tab capture
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+      
+      if (!tab?.id) {
+        throw new Error('No active tab found for audio capture')
+      }
+      
       // Check if tabCapture API is available
       if (!chrome.tabCapture || !chrome.tabCapture.capture) {
         throw new Error('Tab capture API is not available. Make sure the extension has tabCapture permission.')
@@ -63,7 +67,12 @@ async function handleStartTranscription(settings: TranscriptionSettings) {
         video: false
       }, (stream) => {
         if (chrome.runtime.lastError) {
-          throw new Error(`Tab capture failed: ${chrome.runtime.lastError.message}`)
+          console.error('Tab capture error:', chrome.runtime.lastError)
+          chrome.runtime.sendMessage({
+            type: 'TRANSCRIPTION_ERROR',
+            data: { error: `Tab capture failed: ${chrome.runtime.lastError.message}` }
+          })
+          return
         }
         
         if (stream) {
@@ -73,8 +82,16 @@ async function handleStartTranscription(settings: TranscriptionSettings) {
             data: { stream }
           })
         } else {
-          throw new Error('Failed to capture tab audio - no stream returned')
+          chrome.runtime.sendMessage({
+            type: 'TRANSCRIPTION_ERROR',
+            data: { error: 'Failed to capture tab audio - no stream returned' }
+          })
         }
+      })
+    } else {
+      // For microphone, we just notify the side panel to start recording
+      chrome.runtime.sendMessage({
+        type: 'START_MICROPHONE_RECORDING'
       })
     }
   } catch (error) {

@@ -8,7 +8,7 @@
     "build": "tsc && vite build && npm run copy-manifest && npm run fix-paths",
     "preview": "vite preview",
     "copy-manifest": "cp public/manifest.json dist/manifest.json",
-    "fix-paths": "sed -i 's|href=\"./assets/|href=\"../../assets/|g' dist/src/*/index.html && sed -i 's|src=\"./assets/|src=\"../../assets/|g' dist/src/*/index.html",
+    "fix-paths": "sed -i 's|href=\"/assets/|href=\"../../assets/|g' dist/src/*/index.html && sed -i 's|src=\"/assets/|src=\"../../assets/|g' dist/src/*/index.html",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
   "keywords": [
