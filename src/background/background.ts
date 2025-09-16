@@ -53,12 +53,29 @@ async function handleStartTranscription(settings: TranscriptionSettings) {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
       
       if (!tab?.id) {
-        throw new Error('No active tab found for audio capture')
+        chrome.runtime.sendMessage({
+          type: 'TRANSCRIPTION_ERROR',
+          data: { error: 'No active tab found for audio capture. Please try using microphone instead.' }
+        })
+        return
+      }
+      
+      // Check if we're on a restricted page
+      if (tab.url?.startsWith('chrome://') || tab.url?.startsWith('chrome-extension://')) {
+        chrome.runtime.sendMessage({
+          type: 'TRANSCRIPTION_ERROR',
+          data: { error: 'Tab capture is not allowed on Chrome internal pages. Please navigate to a regular website or use microphone recording.' }
+        })
+        return
       }
       
       // Check if tabCapture API is available
       if (!chrome.tabCapture || !chrome.tabCapture.capture) {
-        throw new Error('Tab capture API is not available. Make sure the extension has tabCapture permission.')
+        chrome.runtime.sendMessage({
+          type: 'TRANSCRIPTION_ERROR',
+          data: { error: 'Tab capture API is not available. This might be due to browser restrictions. Please try using microphone recording instead.' }
+        })
+        return
       }
       
       // Start tab capture - using callback version for Chrome API compatibility
@@ -70,7 +87,7 @@ async function handleStartTranscription(settings: TranscriptionSettings) {
           console.error('Tab capture error:', chrome.runtime.lastError)
           chrome.runtime.sendMessage({
             type: 'TRANSCRIPTION_ERROR',
-            data: { error: `Tab capture failed: ${chrome.runtime.lastError.message}` }
+            data: { error: `Tab capture failed: ${chrome.runtime.lastError.message}. Try using microphone recording instead.` }
           })
           return
         }
@@ -84,7 +101,7 @@ async function handleStartTranscription(settings: TranscriptionSettings) {
         } else {
           chrome.runtime.sendMessage({
             type: 'TRANSCRIPTION_ERROR',
-            data: { error: 'Failed to capture tab audio - no stream returned' }
+            data: { error: 'Failed to capture tab audio - no stream returned. Please try microphone recording instead.' }
           })
         }
       })
