@@ -5,35 +5,168 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI Live Transcriber</title>
     <style>
-      /* Fallback CSS to ensure basic styling works */
+      /* Comprehensive fallback CSS to ensure full styling works */
       body {
-        font-family: system-ui, -apple-system, sans-serif;
+        font-family: system-ui, -apple-system, 'Segoe UI', 'Roboto', sans-serif;
         margin: 0;
         padding: 0;
         background-color: #ffffff;
         color: #1e293b;
+        line-height: 1.5;
       }
       #root {
         min-height: 100vh;
-        padding: 16px;
+        padding: 20px;
         max-width: 400px;
         margin: 0 auto;
       }
-      /* Basic button styling as fallback */
+      
+      /* Header styling */
+      h1, h2, h3 {
+        font-weight: 600;
+        margin: 0 0 16px 0;
+        color: #0f172a;
+      }
+      h1 { font-size: 24px; }
+      h2 { font-size: 20px; }
+      h3 { font-size: 18px; }
+      
+      /* Button styling - Primary */
       button {
         font-family: inherit;
         cursor: pointer;
-        border-radius: 6px;
-        padding: 8px 16px;
+        border-radius: 8px;
+        padding: 10px 16px;
         font-weight: 500;
-        transition: all 0.2s;
+        font-size: 14px;
+        border: 1px solid transparent;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 40px;
       }
-      /* Ensure content is visible even without external CSS */
-      .space-y-4 > * + * {
-        margin-top: 16px !important;
+      
+      /* Primary button - blue */
+      button.primary, button[data-variant="primary"] {
+        background-color: #3b82f6;
+        color: white;
+        border-color: #3b82f6;
       }
-      .space-y-2 > * + * {
-        margin-top: 8px !important;
+      button.primary:hover, button[data-variant="primary"]:hover {
+        background-color: #2563eb;
+        border-color: #2563eb;
+      }
+      
+      /* Secondary button - gray */
+      button.secondary, button[data-variant="secondary"] {
+        background-color: #f8fafc;
+        color: #475569;
+        border-color: #e2e8f0;
+      }
+      button.secondary:hover, button[data-variant="secondary"]:hover {
+        background-color: #f1f5f9;
+        border-color: #cbd5e1;
+      }
+      
+      /* Destructive button - red */
+      button.destructive, button[data-variant="destructive"] {
+        background-color: #ef4444;
+        color: white;
+        border-color: #ef4444;
+      }
+      button.destructive:hover, button[data-variant="destructive"]:hover {
+        background-color: #dc2626;
+        border-color: #dc2626;
+      }
+      
+      /* Form elements */
+      select, input, textarea {
+        font-family: inherit;
+        padding: 8px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 14px;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      select:focus, input:focus, textarea:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+      }
+      
+      textarea {
+        min-height: 120px;
+        resize: vertical;
+        line-height: 1.5;
+      }
+      
+      /* Labels */
+      label {
+        display: block;
+        font-weight: 500;
+        margin-bottom: 6px;
+        color: #374151;
+      }
+      
+      /* Spacing utilities */
+      .space-y-4 > * + * { margin-top: 16px !important; }
+      .space-y-2 > * + * { margin-top: 8px !important; }
+      .space-y-6 > * + * { margin-top: 24px !important; }
+      
+      /* Grid and flex utilities */
+      .flex { display: flex; }
+      .flex-col { flex-direction: column; }
+      .items-center { align-items: center; }
+      .justify-center { justify-content: center; }
+      .justify-between { justify-content: space-between; }
+      .gap-2 { gap: 8px; }
+      .gap-4 { gap: 16px; }
+      
+      /* Width utilities */
+      .w-full { width: 100%; }
+      
+      /* Status indicators */
+      .status-recording {
+        background-color: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 8px;
+        padding: 12px;
+        color: #b91c1c;
+        text-align: center;
+      }
+      
+      .status-loading {
+        background-color: #fffbeb;
+        border: 1px solid #fde68a;
+        border-radius: 8px;
+        padding: 12px;
+        color: #92400e;
+        text-align: center;
+      }
+      
+      /* Error messages */
+      .error {
+        background-color: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 6px;
+        padding: 12px;
+        color: #b91c1c;
+        font-size: 14px;
+        margin-top: 8px;
+      }
+      
+      /* Settings icon */
+      .settings-icon {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        color: #6b7280;
       }
     </style>
   </head>

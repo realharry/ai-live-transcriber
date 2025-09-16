@@ -146,35 +146,80 @@ export function useAudioRecording({
   }, [audioSource, setupMediaRecorder])
 
   const getMicrophoneStream = useCallback(async (): Promise<MediaStream> => {
-    // Use a more reliable approach for Chrome extensions
     try {
       console.log('Requesting microphone access...')
       
+      // First, check if getUserMedia is available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('getUserMedia is not supported in this browser')
+      }
+      
+      // Check permissions first
+      try {
+        const permissionStatus = await navigator.permissions.query({ name: 'microphone' as PermissionName })
+        console.log('Microphone permission status:', permissionStatus.state)
+        
+        if (permissionStatus.state === 'denied') {
+          throw new Error('Microphone permission has been denied. Please enable microphone access in your browser settings.')
+        }
+      } catch (permissionError) {
+        console.warn('Permission query failed:', permissionError)
+        // Continue anyway, as some browsers don't support permission queries
+      }
+      
+      // Request microphone access with simplified constraints
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
-          sampleRate: 16000
+          autoGainControl: true,
+          sampleRate: { ideal: 16000 },
+          sampleSize: { ideal: 16 },
+          channelCount: { ideal: 1 }
         }
       })
       
-      console.log('Microphone access granted')
+      console.log('Microphone access granted, stream:', stream)
+      console.log('Audio tracks:', stream.getAudioTracks().map(track => ({ 
+        id: track.id, 
+        label: track.label, 
+        enabled: track.enabled, 
+        readyState: track.readyState 
+      })))
+      
       return stream
       
     } catch (error: any) {
       console.error('Microphone access error:', error)
+      console.error('Error name:', error.name)
+      console.error('Error message:', error.message)
       
       // Enhanced error handling with more specific messages
       if (error.name === 'NotAllowedError') {
-        throw new Error('Microphone permission denied. Please allow microphone access when prompted by your browser.')
+        // This is the most common error - permission denied
+        throw new Error('Microphone permission denied. Please click "Allow" when your browser asks for microphone access.')
       } else if (error.name === 'NotFoundError') {
-        throw new Error('No microphone found. Please check your audio devices and try again.')
+        throw new Error('No microphone found. Please check that a microphone is connected and try again.')
       } else if (error.name === 'NotReadableError') {
-        throw new Error('Microphone is being used by another application. Please close other apps using the microphone.')
+        throw new Error('Microphone is being used by another application. Please close other apps using the microphone and try again.')
       } else if (error.name === 'OverconstrainedError') {
-        throw new Error('Microphone constraints could not be satisfied. Please try with different audio settings.')
+        // Try again with simpler constraints
+        console.log('Constraints failed, trying with simpler audio settings...')
+        try {
+          const simpleStream = await navigator.mediaDevices.getUserMedia({
+            audio: true
+          })
+          console.log('Simple microphone access granted')
+          return simpleStream
+        } catch (simpleError: any) {
+          throw new Error('Microphone constraints could not be satisfied. Please try with different audio settings.')
+        }
+      } else if (error.name === 'SecurityError') {
+        throw new Error('Microphone access blocked by security policy. Please check your browser settings.')
+      } else if (error.message?.toLowerCase().includes('permission')) {
+        throw new Error('Microphone permission denied. Please allow microphone access when prompted by your browser.')
       } else {
-        throw new Error(`Microphone access failed: ${error.message}`)
+        throw new Error(`Microphone access failed: ${error.message || 'Unknown error'}`)
       }
     }
   }, [])
