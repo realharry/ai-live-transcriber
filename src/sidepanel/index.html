@@ -158,17 +158,70 @@
         margin-top: 8px;
       }
       
-      /* Settings icon */
-      .settings-icon {
-        position: absolute;
-        top: 16px;
+      /* Debug panel */
+      .debug-panel {
+        position: fixed;
+        bottom: 16px;
         right: 16px;
-        width: 20px;
-        height: 20px;
-        cursor: pointer;
-        color: #6b7280;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 8px;
+        font-size: 11px;
+        color: #64748b;
+        max-width: 200px;
+        z-index: 1000;
+      }
+      
+      /* Ensure all text is visible */
+      * {
+        color: inherit;
+      }
+      
+      /* Make sure buttons are visible */
+      button:not([class*="bg-"]):not([class*="primary"]):not([class*="secondary"]):not([class*="destructive"]) {
+        background-color: #f1f5f9;
+        color: #475569;
+        border: 1px solid #cbd5e1;
       }
     </style>
+    
+    <!-- Debug Panel -->
+    <div id="debug-panel" class="debug-panel" style="display: none;">
+      <div id="debug-status">Initializing...</div>
+    </div>
+    
+    <script>
+      // Debug information display
+      window.addEventListener('load', () => {
+        const debugPanel = document.getElementById('debug-panel');
+        const debugStatus = document.getElementById('debug-status');
+        
+        if (debugPanel && debugStatus) {
+          debugPanel.style.display = 'block';
+          debugStatus.innerHTML = 'Page loaded at ' + new Date().toLocaleTimeString();
+          
+          // Show React mounting status
+          setTimeout(() => {
+            const root = document.getElementById('root');
+            if (root && root.children.length > 0) {
+              debugStatus.innerHTML = 'React app mounted ✅<br/>CSS fallback active ✅';
+            } else {
+              debugStatus.innerHTML = 'React app not mounted ❌<br/>Checking...';
+            }
+          }, 1000);
+        }
+      });
+      
+      // Global error handler
+      window.addEventListener('error', (e) => {
+        console.error('Global error:', e.error);
+        const debugStatus = document.getElementById('debug-status');
+        if (debugStatus) {
+          debugStatus.innerHTML = 'Error: ' + e.error.message;
+        }
+      });
+    </script>
   </head>
   <body>
     <div id="root"></div>

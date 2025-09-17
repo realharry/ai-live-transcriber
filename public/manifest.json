@@ -5,10 +5,11 @@
   "description": "A Chrome extension that listens to audio and transcribes it into text using AI",
   "permissions": [
     "activeTab",
-    "tabCapture",
+    "tabCapture", 
     "storage",
     "sidePanel",
-    "scripting"
+    "scripting",
+    "microphone"
   ],
   "host_permissions": [
     "https://*/*"
