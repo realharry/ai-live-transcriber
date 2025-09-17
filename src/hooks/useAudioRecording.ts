@@ -154,35 +154,14 @@ export function useAudioRecording({
         throw new Error('getUserMedia is not supported in this browser')
       }
       
-      // Check permissions first (if supported)
+      // Try with simple constraints first (more likely to work in Chrome extensions)
       try {
-        const permissionDescriptor = { name: 'microphone' as PermissionName }
-        const permissionStatus = await navigator.permissions.query(permissionDescriptor)
-        console.log('Microphone permission status:', permissionStatus.state)
-        
-        if (permissionStatus.state === 'denied') {
-          throw new Error('Microphone permission has been permanently denied. Please enable microphone access in your browser settings:\n\n1. Click the lock icon in the address bar\n2. Allow microphone access\n3. Reload the extension')
-        }
-      } catch (permissionError) {
-        console.warn('Permission query failed (may not be supported):', permissionError)
-        // Continue anyway, as some browsers don't support permission queries
-      }
-      
-      // Try with optimal constraints first
-      try {
-        console.log('Attempting getUserMedia with optimal constraints...')
+        console.log('Attempting getUserMedia with simple constraints...')
         const stream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true,
-            sampleRate: { ideal: 16000 },
-            sampleSize: { ideal: 16 },
-            channelCount: { ideal: 1 }
-          }
+          audio: true
         })
         
-        console.log('Microphone access granted with optimal constraints, stream:', stream)
+        console.log('Microphone access granted, stream:', stream)
         console.log('Audio tracks:', stream.getAudioTracks().map(track => ({ 
           id: track.id, 
           label: track.label, 
@@ -192,16 +171,29 @@ export function useAudioRecording({
         
         return stream
         
-      } catch (constraintError: any) {
-        console.warn('Optimal constraints failed, trying simple constraints:', constraintError)
+      } catch (simpleError: any) {
+        console.warn('Simple constraints failed, trying optimal constraints:', simpleError)
         
-        // Fallback to simple constraints
-        const simpleStream = await navigator.mediaDevices.getUserMedia({
-          audio: true
-        })
-        
-        console.log('Microphone access granted with simple constraints')
-        return simpleStream
+        // Try with optimal constraints as fallback
+        try {
+          const optimalStream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true,
+              sampleRate: { ideal: 16000 },
+              sampleSize: { ideal: 16 },
+              channelCount: { ideal: 1 }
+            }
+          })
+          
+          console.log('Microphone access granted with optimal constraints')
+          return optimalStream
+          
+        } catch (optimalError: any) {
+          console.warn('Both constraint attempts failed, throwing original error')
+          throw simpleError // Throw the original simple error
+        }
       }
       
     } catch (error: any) {
@@ -211,17 +203,17 @@ export function useAudioRecording({
       
       // Enhanced error handling with specific user guidance
       if (error.name === 'NotAllowedError') {
-        throw new Error('Microphone permission denied. Please:\n\n1. Click "Allow" when your browser asks for microphone access\n2. If you already denied it, click the lock icon in the address bar and enable microphone access\n3. Reload the extension and try again')
+        throw new Error('Microphone permission denied. Please click "Allow" when your browser prompts for microphone access. If you already denied it, click the lock icon in your browser\'s address bar to enable microphone access.')
       } else if (error.name === 'NotFoundError') {
-        throw new Error('No microphone found. Please:\n\n1. Connect a microphone to your computer\n2. Check that your microphone is properly configured\n3. Try again')
+        throw new Error('No microphone found. Please connect a microphone to your computer and try again.')
       } else if (error.name === 'NotReadableError') {
-        throw new Error('Microphone is being used by another application. Please:\n\n1. Close other apps that might be using the microphone\n2. Make sure no other Chrome tabs are recording audio\n3. Try again')
+        throw new Error('Microphone is being used by another application. Please close other apps that might be using the microphone and try again.')
       } else if (error.name === 'OverconstrainedError') {
         throw new Error('Microphone constraints could not be satisfied. This usually indicates a hardware issue.')
       } else if (error.name === 'SecurityError') {
         throw new Error('Microphone access blocked by security policy. Please check your browser security settings.')
       } else if (error.message?.toLowerCase().includes('permission')) {
-        throw new Error('Microphone permission issue. Please allow microphone access in your browser and reload the extension.')
+        throw new Error('Microphone permission issue. Please allow microphone access in your browser and try again.')
       } else {
         throw new Error(`Microphone access failed: ${error.message || 'Unknown error'}. Please check your microphone settings and try again.`)
       }

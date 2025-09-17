@@ -190,38 +190,6 @@
     <div id="debug-panel" class="debug-panel" style="display: none;">
       <div id="debug-status">Initializing...</div>
     </div>
-    
-    <script>
-      // Debug information display
-      window.addEventListener('load', () => {
-        const debugPanel = document.getElementById('debug-panel');
-        const debugStatus = document.getElementById('debug-status');
-        
-        if (debugPanel && debugStatus) {
-          debugPanel.style.display = 'block';
-          debugStatus.innerHTML = 'Page loaded at ' + new Date().toLocaleTimeString();
-          
-          // Show React mounting status
-          setTimeout(() => {
-            const root = document.getElementById('root');
-            if (root && root.children.length > 0) {
-              debugStatus.innerHTML = 'React app mounted ✅<br/>CSS fallback active ✅';
-            } else {
-              debugStatus.innerHTML = 'React app not mounted ❌<br/>Checking...';
-            }
-          }, 1000);
-        }
-      });
-      
-      // Global error handler
-      window.addEventListener('error', (e) => {
-        console.error('Global error:', e.error);
-        const debugStatus = document.getElementById('debug-status');
-        if (debugStatus) {
-          debugStatus.innerHTML = 'Error: ' + e.error.message;
-        }
-      });
-    </script>
   </head>
   <body>
     <div id="root"></div>
